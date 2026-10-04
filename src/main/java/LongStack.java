@@ -61,7 +61,7 @@ public class LongStack {
          push(left / right);
       }
    }
-  
+
    public long tos() {
       if (stEmpty()) {
          throw new RuntimeException("tos: stack is empty");
@@ -118,3 +118,4 @@ public class LongStack {
    }
 }
 
+//test
