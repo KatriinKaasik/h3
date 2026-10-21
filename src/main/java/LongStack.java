@@ -1,6 +1,7 @@
 /**
  * Lahenduse loomisel kasutasin tehisintellekti abi (GPT-5.6 Luna).
  */
+
 import java.util.LinkedList;
 
 public class LongStack {
