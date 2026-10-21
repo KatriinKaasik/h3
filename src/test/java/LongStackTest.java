@@ -2,14 +2,100 @@
 import static org.junit.Assert.*;
 import org.junit.Test;
 
-
 /** Testklass.
  * @author jaanus
  */
 public class LongStackTest {
+   @Test
+   public void testInterpretExample1() {
+      String input = "15 7 3 >R - R> -";
+      long expected = 5;
+      long actual = LongStack.interpret(input);
+      assertEquals("Example 1 failed: expression '" + input + "' should evaluate to 5", expected, actual);
+   }
+
+   @Test
+   public void testInterpretExample2() {
+      String input = "3 >R R@ R> *";
+      long expected = 9;
+      long actual = LongStack.interpret(input);
+      assertEquals("Example 2 failed: expression '" + input + "' should evaluate to 9", expected, actual);
+   }
+
+   @Test
+   public void testInterpretExample3() {
+      String input = "2 5 >R 3 R@ * - R> -";
+      long expected = -18;
+      long actual = LongStack.interpret(input);
+      assertEquals("Example 3 failed: expression '" + input + "' should evaluate to -18", expected, actual);
+   }
+
+
+   @Test
+   public void testInterpretNonCommutativeDivisionAndSubtraction() {
+
+      String input = "100 5 >R 20 R@ * / R> -";
+
+      long expected = -4;
+      long actual = LongStack.interpret(input);
+      assertEquals("Non-commutative evaluation failed: wrong sign or operand order in expression '" + input + "'", expected, actual);
+   }
+
+
+   @Test
+   public void testReturnStackNotEmptyAtEnd() {
+      String input = "10 5 - 3 >R";
+      try {
+         LongStack.interpret(input);
+         fail("Assertion failed: Expected a RuntimeException because the return stack was not empty at the end of execution.");
+      } catch (RuntimeException e) {
+         String errorMsg = e.getMessage().toLowerCase();
+         assertTrue("Exception message should explicitly state that the return stack is not empty. Actual message: " + e.getMessage(),
+                 errorMsg.contains("return stack") && (errorMsg.contains("not empty") || errorMsg.contains("left")));
+      }
+   }
+
+   @Test
+   public void testDataStackUnderflowOnToReturn() {
+      String input = ">R";
+      try {
+         LongStack.interpret(input);
+         fail("Assertion failed: Expected a RuntimeException because the data stack was empty before execution of '>R'.");
+      } catch (RuntimeException e) {
+         String errorMsg = e.getMessage().toLowerCase();
+         assertTrue("Exception message should report a data stack underflow for '>R'. Actual message: " + e.getMessage(),
+                 errorMsg.contains("data stack") && (errorMsg.contains("empty") || errorMsg.contains("underflow") || errorMsg.contains(">r")));
+      }
+   }
+
+   @Test
+   public void testReturnStackUnderflowOnFromReturn() {
+      String input = "5 R>";
+      try {
+         LongStack.interpret(input);
+         fail("Assertion failed: Expected a RuntimeException because the return stack was empty before execution of 'R>'.");
+      } catch (RuntimeException e) {
+         String errorMsg = e.getMessage().toLowerCase();
+         assertTrue("Exception message should report a return stack underflow for 'R>'. Actual message: " + e.getMessage(),
+                 errorMsg.contains("return stack") && (errorMsg.contains("empty") || errorMsg.contains("underflow") || errorMsg.contains("r>")));
+      }
+   }
+
+   @Test
+   public void testReturnStackUnderflowOnFetchReturn() {
+      String input = "5 R@";
+      try {
+         LongStack.interpret(input);
+         fail("Assertion failed: Expected a RuntimeException because the return stack was empty before execution of 'R@'.");
+      } catch (RuntimeException e) {
+         String errorMsg = e.getMessage().toLowerCase();
+         assertTrue("Exception message should report a return stack underflow for 'R@'. Actual message: " + e.getMessage(),
+                 errorMsg.contains("return stack") && (errorMsg.contains("empty") || errorMsg.contains("underflow") || errorMsg.contains("r@")));
+      }
+   }
 
    @Test (timeout=1000)
-   public void testNewStack() { 
+   public void testNewStack() {
       LongStack m = new LongStack();
       assertTrue ("new stack must be empty;", m.stEmpty());
       m.push (1);
@@ -25,9 +111,9 @@ public class LongStackTest {
       long i1 = m.pop();
       long i2 = m.pop();
       assertTrue ("After two pushes and two pops stack must be empty;",
-         m.stEmpty());
+              m.stEmpty());
       assertTrue ("LIFO order must hold: 6 -3 returns -3 first;",
-         (i1 == -3) && (i2 == 6));
+              (i1 == -3) && (i2 == 6));
    }
 
    @Test (timeout=1000)
@@ -45,7 +131,7 @@ public class LongStackTest {
       m.op ("+");
       tt = m.pop();
       assertTrue ("2147483649 + 2147483648 must be 4294967297; ",
-         tt==4294967297L); 
+              tt==4294967297L);
       m.push (5);
       m.push (3);
       m.op ("-");
@@ -64,7 +150,7 @@ public class LongStackTest {
       tt = m.pop();
       assertTrue ("51 / 3 must be 17; ", tt==17);
       assertTrue ("push push op pop must not grow the stack; ", m.stEmpty());
-   } 
+   }
 
    @Test (timeout=1000)
    public void testTos() {
@@ -94,11 +180,11 @@ public class LongStackTest {
       assertFalse ("1 0 and 1 3 must not be equal;", m1.equals(m2));
       m1.pop();
       m2.pop();
-      assertTrue ("1 in stacks with different history, stacks must be equal;", 
-         m1.equals(m2));
+      assertTrue ("1 in stacks with different history, stacks must be equal;",
+              m1.equals(m2));
       m1.pop();
-      assertFalse ("first empty, second contains 1, must not be equal;", 
-         m1.equals(m2));
+      assertFalse ("first empty, second contains 1, must not be equal;",
+              m1.equals(m2));
    }
 
    @Test (expected=RuntimeException.class)
@@ -140,9 +226,9 @@ public class LongStackTest {
       m.push (2);
       String s2 = m.toString().substring (0, 3);
       assertEquals (
-   "top must be the last element; toString from bottom must start with -8 7  ", 
-         s1, s2);
-   } 
+              "top must be the last element; toString from bottom must start with -8 7  ",
+              s1, s2);
+   }
 
    @Test (expected=RuntimeException.class)
    public void testTosUnderflow() {
@@ -206,23 +292,23 @@ public class LongStackTest {
    public void testInterpretLong() {
       String s = "1 -10 4 8 3 - + * +";
       assertEquals ("expression: " + Aout.toString (s), -89,
-         LongStack.interpret (s));
+              LongStack.interpret (s));
       s = "156 154 152 - 3 + -";
       assertEquals ("expression: " + Aout.toString (s), 151,
-         LongStack.interpret (s));
+              LongStack.interpret (s));
    }
 
    @Test (timeout=1000)
    public void testInterpretTokenizer() {
       String s = "1  2    +";
-      assertEquals ("expression: " + Aout.toString (s), 3, 
-         LongStack.interpret (s));
+      assertEquals ("expression: " + Aout.toString (s), 3,
+              LongStack.interpret (s));
       s = "   \t \t356  \t \t";
       assertEquals ("expression: " + Aout.toString (s), 356,
-         LongStack.interpret (s));
+              LongStack.interpret (s));
       s = "\t2 \t5 +   \t";
-      assertEquals ("expression: " + Aout.toString (s), 7, 
-         LongStack.interpret (s));
+      assertEquals ("expression: " + Aout.toString (s), 7,
+              LongStack.interpret (s));
    }
 
    @Test (expected=RuntimeException.class)
@@ -270,10 +356,9 @@ public class LongStackTest {
       LongStack.interpret ("2 5 + -");
    }
 
-  @Test (expected=RuntimeException.class)
+   @Test (expected=RuntimeException.class)
    public void testTooFewNumbers3() {
       LongStack.interpret ("+");
    }
 
 }
-

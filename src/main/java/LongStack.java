@@ -16,7 +16,9 @@ public class LongStack implements Cloneable {
    private Node top;
 
    public static void main (String[] argum) {
-
+      System.out.println(interpret("15 7 3 >R - R> -"));
+      System.out.println(interpret("3 >R R@ R> *"));
+      System.out.println(interpret("2 5 >R 3 R@ * - R> -"));
    }
 
    // Constructor for a new stack
@@ -136,6 +138,7 @@ public class LongStack implements Cloneable {
          throw new RuntimeException("RPN Interpretation Error: Expression string is empty or null. Original input: \"" + pol + "\"");
       }
       LongStack stack = new LongStack();
+      LongStack rStack = new LongStack(); // return stack (R-pinu)
       String[] tokens = pol.trim().split("\\s+");
 
       for (String token : tokens) {
@@ -145,6 +148,21 @@ public class LongStack implements Cloneable {
             } catch (RuntimeException e) {
                throw new RuntimeException("RPN Interpretation Error: Not enough numbers to perform the operation '" + token + "'. Original input: \"" + pol + "\"", e);
             }
+         } else if (token.equals(">R")) {
+            if (stack.stEmpty()) {
+               throw new RuntimeException("RPN Interpretation Error: '>R' requires an element on the data stack, but it is empty. Original input: \"" + pol + "\"");
+            }
+            rStack.push(stack.pop());
+         } else if (token.equals("R>")) {
+            if (rStack.stEmpty()) {
+               throw new RuntimeException("RPN Interpretation Error: 'R>' requires an element on the return stack, but it is empty. Original input: \"" + pol + "\"");
+            }
+            stack.push(rStack.pop());
+         } else if (token.equals("R@")) {
+            if (rStack.stEmpty()) {
+               throw new RuntimeException("RPN Interpretation Error: 'R@' requires an element on the return stack, but it is empty. Original input: \"" + pol + "\"");
+            }
+            stack.push(rStack.tos());
          } else {
             try {
                long value = Long.parseLong(token);
@@ -153,6 +171,10 @@ public class LongStack implements Cloneable {
                throw new RuntimeException("RPN Interpretation Error: Illegal symbol '" + token + "' detected. Original input: \"" + pol + "\"", e);
             }
          }
+      }
+
+      if (!rStack.stEmpty()) {
+         throw new RuntimeException("RPN Interpretation Error: Return stack is not empty at the end of the expression. Original input: \"" + pol + "\"");
       }
 
       long result = stack.pop();
