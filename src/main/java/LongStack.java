@@ -1,122 +1,166 @@
 /**
- * Lahenduse loomisel kasutasin tehisintellekti abi (GPT-5.6 Luna).
+ * Lahenduse loomisel kasutasin tehisintellekti abi (Claude Sonnet 5.5).
  */
+public class LongStack implements Cloneable {
+   // used resource: https://www.geeksforgeeks.org/dsa/implement-a-stack-using-singly-linked-list/
 
-import java.util.LinkedList;
+   private static class Node {
+      private long stack;
+      private Node next;
 
-public class LongStack {
-
-   private LinkedList<Long> stack;
+      private Node(long stack, Node next) {
+         this.stack = stack;
+         this.next = next;
+      }
+   }
+   private Node top;
 
    public static void main (String[] argum) {
-      System.out.println(interpret("2 3 +"));
+
    }
 
+   // Constructor for a new stack
+
    LongStack() {
-      stack = new LinkedList<>();
+      this.top = null;
    }
 
    @Override
    public Object clone() throws CloneNotSupportedException {
-      LongStack copy = new LongStack();
-      copy.stack.addAll(stack);
-      return copy;
+      LongStack clonedStack = (LongStack) super.clone();
+      if (this.top == null) {
+         clonedStack.top = null;
+      } else {
+         clonedStack.top = new Node(this.top.stack, null);
+         Node currentOriginal = this.top.next;
+         Node currentClone = clonedStack.top;
+         while (currentOriginal != null) {
+            currentClone.next = new Node(currentOriginal.stack, null);
+            currentClone = currentClone.next;
+            currentOriginal = currentOriginal.next;
+         }
+      }
+      return clonedStack;
    }
 
    public boolean stEmpty() {
-      return stack.isEmpty();
+      return this.top == null;
    }
 
    public void push (long a) {
-      stack.add(a);
+      this.top = new Node(a, this.top);
    }
 
    public long pop() {
       if (stEmpty()) {
-         throw new RuntimeException("pop: stack is empty");
+         throw new RuntimeException("Stack underflow error: Can't pop in empty stack");
       }
-      return stack.removeLast();
-   } // pop
+      long value = this.top.stack;
+      this.top = this.top.next;
+      return value;
+   }
 
    public void op (String s) {
-      if (!s.equals("+") && !s.equals("-") && !s.equals("*") && !s.equals("/")) {
-         throw new RuntimeException("op: invalid operation '" + s + "'");
+      if (s == null || (!s.equals("+") && !s.equals("-") && !s.equals("*") && !s.equals("/"))) {
+         throw new RuntimeException("Invalid operation error: '" + s + "' is not a supported mathematical operator (+, -, *, /).");
       }
-      if (stack.size() < 2) {
-         throw new RuntimeException("op: not enough elements for operation'" + s + "'");
-      }
-      long right = pop();
-      long left = pop();
 
-      if (s.equals("+")) {
-         push(left + right);
-      } else if (s.equals("-")) {
-         push(left - right);
-      } else if (s.equals("*")) {
-         push(left * right);
-      } else {
-         if (right == 0) {
-            throw new RuntimeException(
-                    "op: division by zero in operation '" + s + "'");
-         }
-         push(left / right);
+      if (this.top == null || this.top.next == null) {
+         throw new RuntimeException("Stack underflow error: Operation '" + s + "' requires at least 2 elements.");
       }
+
+      long y = pop();
+      long x = pop();
+      long result = 0;
+
+      switch (s) {
+         case "+": result = x + y; break;
+         case "-": result = x - y; break;
+         case "*": result = x * y; break;
+         case "/":
+            if (y == 0) {
+               throw new RuntimeException("Arithmetic error: Can't divide by 0");
+            }
+            result = x / y;
+            break;
+      }
+      push(result);
    }
 
    public long tos() {
       if (stEmpty()) {
-         throw new RuntimeException("tos: stack is empty");
+         throw new RuntimeException("TOS error: Stack is empty.");
       }
-      return stack.getLast();
+      return this.top.stack;
    }
 
    @Override
    public boolean equals (Object o) {
-      if (!(o instanceof LongStack)) {
-         return false;
-      }
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+
       LongStack other = (LongStack) o;
-      return stack.equals(other.stack);
+      Node currentThis = this.top;
+      Node currentOther = other.top;
+
+      while (currentThis != null && currentOther != null) {
+         if (currentThis.stack != currentOther.stack) {
+            return false;
+         }
+         currentThis = currentThis.next;
+         currentOther = currentOther.next;
+      }
+
+      return currentThis == null && currentOther == null;
    }
 
    @Override
    public String toString() {
-      StringBuilder result = new StringBuilder();
+      StringBuilder sb = new StringBuilder();
 
-      for (Long number : stack) {
-         result.append(number).append(" ");
+      buildBottomToTopString(this.top, sb);
+      return sb.toString().trim();
+   }
+
+   private void buildBottomToTopString(Node node, StringBuilder sb) {
+      if (node == null) {
+         return;
       }
-
-      return result.toString();
+      buildBottomToTopString(node.next, sb);
+      sb.append(node.stack).append(" ");
    }
 
    public static long interpret (String pol) {
+
       if (pol == null || pol.trim().isEmpty()) {
-         throw new RuntimeException("Invalid expression: " + pol);
+         throw new RuntimeException("RPN Interpretation Error: Expression string is empty or null. Original input: \"" + pol + "\"");
       }
       LongStack stack = new LongStack();
-      String[] parts = pol.trim().split("\\s+");
+      String[] tokens = pol.trim().split("\\s+");
 
-      for (String part : parts) {
-         if (part.equals("+") || part.equals("-") || part.equals("*") || part.equals("/")) {
+      for (String token : tokens) {
+         if (token.equals("+") || token.equals("-") || token.equals("*") || token.equals("/")) {
             try {
-               stack.op(part);
+               stack.op(token);
             } catch (RuntimeException e) {
-               throw new RuntimeException("Invalid expression '" + pol + "': " + e.getMessage());
+               throw new RuntimeException("RPN Interpretation Error: Not enough numbers to perform the operation '" + token + "'. Original input: \"" + pol + "\"", e);
             }
          } else {
             try {
-               stack.push(Long.parseLong(part));
+               long value = Long.parseLong(token);
+               stack.push(value);
             } catch (NumberFormatException e) {
-               throw new RuntimeException("Invalid expression '" + pol + "': invalid symbol '" + part + "'");
+               throw new RuntimeException("RPN Interpretation Error: Illegal symbol '" + token + "' detected. Original input: \"" + pol + "\"", e);
             }
          }
       }
-      if (stack.stEmpty() || stack.stack.size() > 1) {
-         throw new RuntimeException("Invalid expression '" + pol + "'");
+
+      long result = stack.pop();
+
+      if (!stack.stEmpty()) {
+         throw new RuntimeException("RPN Interpretation Error: Too many numbers provided. Redundant elements left on the stack. Original input: \"" + pol + "\"");
       }
-      return stack.pop();
+
+      return result;
    }
 }
-
-//test
